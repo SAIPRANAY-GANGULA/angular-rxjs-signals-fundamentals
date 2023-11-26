@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, EventEmitter, OnDestroy, OnInit, Output, inject } from '@angular/core';
 
 import { NgIf, NgFor, NgClass } from '@angular/common';
 import { Product } from '../product';
@@ -26,7 +26,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   selectedProductId: number = 0;
 
   ngOnInit(): void {
-    this.sub = this.productService.getProducts()
+    this.productService.getProducts()
       .pipe(
         tap(() => console.log('In component pipeline')),
         catchError(err => {
@@ -38,11 +38,13 @@ export class ProductListComponent implements OnInit, OnDestroy {
         console.log(this.products);
       });
   }
+
   ngOnDestroy(): void {
     this.sub.unsubscribe();
   }
 
   onSelected(productId: number): void {
     this.selectedProductId = productId;
+    this.productService.setSelectedProductId(productId);
   }
 }

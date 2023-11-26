@@ -1,13 +1,24 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, map, of, switchMap, tap, throwError } from 'rxjs';
+import {
+  BehaviorSubject,
+  Observable,
+  Subject,
+  catchError,
+  delay,
+  map,
+  of,
+  switchMap,
+  tap,
+  throwError,
+} from 'rxjs';
 import { Product } from './product';
 import { HttpErrorService } from '../utilities/http-error.service';
 import { ReviewService } from '../reviews/review.service';
 import { Review } from '../reviews/review';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ProductService {
   private productsUrl = 'api/products';
@@ -15,31 +26,38 @@ export class ProductService {
   private http = inject(HttpClient);
   private errorService = inject(HttpErrorService);
   private reviewService = inject(ReviewService);
+  private selectedProductId$ = new Subject<number>();
+
+  getSelectedProductId$(): Observable<number> {
+    return this.selectedProductId$.asObservable();
+  }
+
+  setSelectedProductId(id: number): void {
+    this.selectedProductId$.next(id);
+  }
 
   getProducts(): Observable<Product[]> {
-    return this.http.get<Product[]>(this.productsUrl)
-      .pipe(
-        tap(() => console.log('In http.get pipeline')),
-        catchError(err => this.handleError(err))
-      );
+    return this.http.get<Product[]>(this.productsUrl).pipe(
+      tap(() => console.log('In http.get pipeline')),
+      catchError((err) => this.handleError(err))
+    );
   }
 
   getProduct(id: number): Observable<Product> {
     const productUrl = this.productsUrl + '/' + id;
-    return this.http.get<Product>(productUrl)
-      .pipe(
-        tap(() => console.log('In http.get by id pipeline')),
-        switchMap(product => this.getProductWithReviews(product)),
-        catchError(err => this.handleError(err))
-      );
+    return this.http
+      .get<Product>(productUrl)
+      .pipe(catchError((err) => this.handleError(err)));
   }
 
-  private getProductWithReviews(product: Product): Observable<Product> {
+  getProductWithReviews(product: Product): Observable<Product> {
     if (product.hasReviews) {
-      return this.http.get<Review[]>(this.reviewService.getReviewUrl(product.id))
+      return this.http
+        .get<Review[]>(this.reviewService.getReviewUrl(product.id))
         .pipe(
-          map(reviews => ({ ...product, reviews } as Product))
-        )
+          // delay(3000),
+          map((reviews) => ({ ...product, reviews } as Product))
+        );
     } else {
       return of(product);
     }
