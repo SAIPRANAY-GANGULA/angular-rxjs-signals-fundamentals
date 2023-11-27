@@ -7,6 +7,7 @@ import {
   inject,
   OnInit,
   DestroyRef,
+  ChangeDetectorRef,
 } from '@angular/core';
 
 import { NgIf, NgFor, CurrencyPipe, AsyncPipe } from '@angular/common';
@@ -38,6 +39,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   errorMessage = '';
   private readonly productService = inject(ProductService);
   private readonly destroyed = new Subject<void>();
+  private readonly cdr = inject(ChangeDetectorRef);
 
   // Product to display
   product: Product | null = null;
@@ -47,6 +49,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   pageTitle = this.product
     ? `Product Detail for: ${this.product.productName}`
     : 'Product Detail';
+
 
   ngOnInit(): void {
     // Nested Subscriptions
@@ -85,34 +88,35 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     //       });
     //   });
 
-    this.product$ = this.productService.getSelectedProductId$().pipe(
-      tap(console.error),
-      switchMap((id) => this.productService.getProduct(id)),
-      tap((productWithoutReviews) =>
-        console.error('productWithoutReviews', productWithoutReviews)
-      ),
-      switchMap((product) =>
-        this.productService.getProductWithReviews(product)
-      ),
-      tap((productWithReviews) =>
-        console.error('productWithReviews', productWithReviews)
-      ),
-      catchError((err) => {
-        this.errorMessage = err;
-        return EMPTY;
-      })
-    );
-
     // this.product$ = this.productService.getSelectedProductId$().pipe(
+    //   tap(console.error),
     //   switchMap((id) => this.productService.getProduct(id)),
+    //   tap((productWithoutReviews) =>
+    //     console.error('productWithoutReviews', productWithoutReviews)
+    //   ),
     //   switchMap((product) =>
     //     this.productService.getProductWithReviews(product)
+    //   ),
+    //   tap((productWithReviews) =>
+    //     console.error('productWithReviews', productWithReviews)
     //   ),
     //   catchError((err) => {
     //     this.errorMessage = err;
     //     return EMPTY;
     //   })
     // );
+
+
+    this.product$ = this.productService.getSelectedProductId$().pipe(
+      switchMap((id) => this.productService.getProduct(id)),
+      switchMap((product) =>
+        this.productService.getProductWithReviews(product)
+      ),
+      catchError((err) => {
+        this.errorMessage = err;
+        return EMPTY;
+      })
+    );
   }
 
   ngOnDestroy(): void {

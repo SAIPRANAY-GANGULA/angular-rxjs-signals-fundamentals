@@ -8,9 +8,11 @@ import {
   delay,
   map,
   of,
+  retry,
   switchMap,
   tap,
   throwError,
+  timer,
 } from 'rxjs';
 import { Product } from './product';
 import { HttpErrorService } from '../utilities/http-error.service';
@@ -47,7 +49,18 @@ export class ProductService {
     const productUrl = this.productsUrl + '/' + id;
     return this.http
       .get<Product>(productUrl)
-      .pipe(catchError((err) => this.handleError(err)));
+      .pipe(
+        //retry backoff algorithm
+        retry({
+          count: 5,
+          delay: (error: any, retryCount: number) => {
+            console.error(error);
+            console.error(`retryCount:`, retryCount);
+            return timer(retryCount * 1000);
+          },
+          resetOnSuccess: true
+        }),
+        catchError((err) => this.handleError(err)));
   }
 
   getProductWithReviews(product: Product): Observable<Product> {
